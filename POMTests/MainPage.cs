@@ -5,8 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 
-namespace POMLab5
+namespace POMTests
 {
     public class MainPage
     {
@@ -38,6 +39,7 @@ namespace POMLab5
 
         public void SendKeysToByPayee(string input)
         {
+            byPayee.Clear();
             byPayee.SendKeys(input);
         }
 
@@ -45,6 +47,7 @@ namespace POMLab5
         {
             byExPayees.SendKeys(input);
         }
+
         public int GetRowCount()
         {
             var rows = Table.FindElements(By.TagName("tr"));
@@ -71,7 +74,16 @@ namespace POMLab5
 
         public bool IsTableDisplayed()
         {
-            return Table.Displayed;
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
+                return true;
+            }
+            catch (WebDriverTimeoutException)
+            {
+                return false;
+            }
         }
 
     }

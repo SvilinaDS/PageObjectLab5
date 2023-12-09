@@ -2,7 +2,6 @@ using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using POMLab5;
 using SeleniumExtras.WaitHelpers;
 using System;
 
@@ -16,6 +15,8 @@ namespace POMTests
         public void Setup()
         {
             driver = new ChromeDriver();
+
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
             driver.Navigate().GoToUrl("https://www.globalsqa.com/angularJs-protractor/SearchFilter/");
         }
 
@@ -24,14 +25,10 @@ namespace POMTests
         {
             var page = new MainPage(driver);
 
+            Assert.IsTrue(page.IsTableDisplayed(), "Table is not displayed.");
+
             page.SelectOptionInAccount("Bank Savings");
             page.SendKeysToByPayee("Salary");
-
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-            wait.Until(driver => page.GetRowCount() > 0);
-
-            Assert.IsTrue(page.GetRowCount() > 0, "No rows found after filtering.");
 
             Assert.AreEqual("Bank Savings", page.GetCellText(0, "Account"), "Incorrect Account value after filtering.");
             Assert.AreEqual("Salary", page.GetCellText(0, "Payee"), "Incorrect Payee value after filtering.");
@@ -44,12 +41,7 @@ namespace POMTests
 
             page.SelectOptionInAccount("Cash");
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            wait.Until(driver => page.GetRowCount() > 0);
-
             Assert.AreEqual(3, page.GetRowCount(), "Incorrect number of rows after filtering.");
-
-            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
 
             Assert.AreEqual("Cash", page.GetCellText(0, "Account"), "Incorrect Account value after filtering.");
         }
@@ -60,12 +52,7 @@ namespace POMTests
 
             page.SelectOptionInType("INCOME");
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            wait.Until(driver => page.GetRowCount() > 0);
-
             Assert.AreEqual(1, page.GetRowCount(), "Incorrect number of rows after filtering.");
-
-            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
 
             Assert.AreEqual("INCOME", page.GetCellText(0, "Type"), "Incorrect Type value after filtering.");
 
@@ -79,10 +66,6 @@ namespace POMTests
             page.SelectOptionInAccount("Cash");
             page.SelectOptionInType("INCOME");
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-            wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("table.table")));
-
             Assert.AreEqual(0, page.GetRowCount(), "Table should only display column header.");
         }
 
@@ -93,12 +76,6 @@ namespace POMTests
 
             page.SelectOptionInAccount("Cash");
             page.SelectOptionInType("EXPENDITURE");
-
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-            wait.Until(driver => page.GetRowCount() > 0);
-
-            Assert.IsTrue(page.GetRowCount() > 0, "No rows found after filtering.");
 
             for (int i = 0; i < page.GetRowCount(); i++)
             {
@@ -113,13 +90,6 @@ namespace POMTests
 
             page.byPayee.SendKeys("HouseRent");
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            wait.Until(driver => page.GetRowCount() > 0);
-
-            Assert.AreEqual(1, page.GetRowCount(), "Incorrect number of rows after filtering.");
-
-            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
-
             Assert.AreEqual("HouseRent", page.GetCellText(0, "Payee"), "Incorrect Payee value after filtering.");
         }
 
@@ -132,12 +102,7 @@ namespace POMTests
 
             page.byExPayees.SendKeys("HouseRent");
 
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            wait.Until(driver => page.GetRowCount() > 0);
-
             Assert.AreEqual(1, page.GetRowCount(), "Incorrect number of rows after filtering.");
-
-            wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
 
             Assert.AreEqual("Cash", page.GetCellText(0, "Account"), "Incorrect Account value after filtering.");
             Assert.AreEqual("HouseRent", page.GetCellText(0, "Payee"), "Incorrect Payee value after filtering.");
@@ -145,20 +110,38 @@ namespace POMTests
         }
         
         [Test]
+        public void SearchByMatchingLetterExPayee()
+        {
+            var page = new MainPage(driver);
+
+            page.SendKeysTobyExPayees("B");
+
+            Assert.IsTrue(page.GetRowCount() > 0, "No rows found after filtering.");
+
+            Assert.AreEqual("Bank Savings", page.GetCellText(0, "Account"), "Incorrect Account value after filtering.");
+            Assert.AreEqual("EXPENDITURE", page.GetCellText(0, "Type"), "Incorrect Type value after filtering.");
+            Assert.AreEqual("InternetBill", page.GetCellText(0, "Payee"), "Incorrect Payee value after filtering.");
+            Assert.AreEqual("500", page.GetCellText(0, "Amount"), "Incorrect Amount value after filtering.");
+
+            Assert.AreEqual("Cash", page.GetCellText(1, "Account"), "Incorrect Account value after filtering.");
+            Assert.AreEqual("EXPENDITURE", page.GetCellText(1, "Type"), "Incorrect Type value after filtering.");
+            Assert.AreEqual("InternetBill", page.GetCellText(1, "Payee"), "Incorrect Payee value after filtering.");
+            Assert.AreEqual("1200", page.GetCellText(1, "Amount"), "Incorrect Amount value after filtering.");
+
+            Assert.AreEqual("Cash", page.GetCellText(2, "Account"), "Incorrect Account value after filtering.");
+            Assert.AreEqual("EXPENDITURE", page.GetCellText(2, "Type"), "Incorrect Type value after filtering.");
+            Assert.AreEqual("PowerBill", page.GetCellText(2, "Payee"), "Incorrect Payee value after filtering.");
+            Assert.AreEqual("200", page.GetCellText(2, "Amount"), "Incorrect Amount value after filtering.");
+
+        }
+        [Test]
         public void SearchWithNonexistentValueTest()
         {
             var page = new MainPage(driver);
 
             page.byPayee.SendKeys("Sample");
+            Assert.AreEqual(0, page.GetRowCount(), "Table should only display column headers with nonexistent value.");
 
-            if (page.GetRowCount() > 0)
-            {
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-                wait.Until(ExpectedConditions.ElementIsVisible(By.XPath("//tr[contains(@class, 'ng-scope')]/td[1]")));
-
-                Assert.AreEqual(1, page.GetRowCount(), "Table should only display column headers with nonexistent value.");
-            }
         }
         [TearDown]
         public void Teardown()
